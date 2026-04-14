@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Live Tracker</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        * { box-sizing: border-box; }
+        body, html {
+            margin: 0; padding: 0;
+            height: 100%; width: 100%;
+            font-family: -apple-system, sans-serif;
+            background: #f0f0f2;
+            overflow: hidden;
+        }
+
+        /* Layar Login */
+        #login-screen {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Layar Peta */
+        #map {
+            height: 100vh;
+            width: 100%;
+            display: none; /* Disembunyikan dulu */
+        }
+
+        /* Titik Lokasi Biru */
+        .blue-dot {
+            width: 15px;
+            height: 15px;
+            background: #007aff;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0,122,255,0.6);
+        }
+    </style>
+</head>
+<body>
+
+<div id="login-screen">
+    <div class="container">
+        <h2 style="margin-bottom: 5px;"> Tracker </h2>
+        <p style="color: #666; margin-bottom: 20px;">Pantau lokasi perangkat secara langsung</p>
+        <input id="username" type="text" placeholder="Nama Perangkat / User">
+        <button onclick="jalankanPeta()">Mulai Lacak</button>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+let map, marker;
+
+function jalankanPeta() {
+    const user = document.getElementById('username').value;
+    if (!user) return alert("Masukkan nama dulu!");
+
+    // Ganti tampilan
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('map').style.display = 'block';
+
+    // Inisialisasi Peta
+    map = L.map('map', { zoomControl: false }).setView([0, 0], 2);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const iconBiru = L.divIcon({ className: 'blue-dot', iconSize: [15, 15] });
+    marker = L.marker([0, 0], { icon: iconBiru }).addTo(map);
+
+    // MULAI LACAK
+    lacakLokasi(user);
+
+    // Perbaikan Penting: Memaksa peta render ulang agar tidak blank
+    setTimeout(() => {
+        map.invalidateSize();
+    }, 400);
+}
+
+function lacakLokasi(nama) {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+
+                marker.setLatLng([lat, lon]).bindPopup("Lokasi: " + nama).openPopup();
+                map.flyTo([lat, lon], 16);
+            },
+            (err) => {
+                alert("GPS Error: Tolong izinkan akses lokasi di HP Anda.");
+            },
+            { enableHighAccuracy: true }
+        );
+    } else {
+        alert("HP Anda tidak mendukung pelacakan.");
+    }
+}
+</script>
+
+</body>
+</html>
